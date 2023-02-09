@@ -62,7 +62,7 @@ table =
     vLimit 5 $
     setAvailableSize (50, 10) $
     (vBox [str "Section Title", hBorder, str "Section 1"] <+> vBorder <+>
-    vBox [str "No of Questions", hBorder, str "30"] )
+    vBox [str "No of Questions", hBorder, str "5"] )
 
 startBtn :: Widget ()
 startBtn =
@@ -78,6 +78,25 @@ startBtn =
 homeScreenApp :: App () e ()
 homeScreenApp =
     App { appDraw = const [homeScreenUI]
+        , appHandleEvent = resizeOrQuit
+        , appStartEvent = return ()
+        , appAttrMap = const $ myMap
+        , appChooseCursor = neverShowCursor
+        }
+
+assessmentScreenUI :: Widget ()
+assessmentScreenUI =
+    centerLayer $
+    withBorderStyle unicode $
+    border $
+    padLeftRight 1 $
+    padBottom (Pad 1) $ 
+    setAvailableSize (80, 500) $
+    hBox [str "Haskell Assessment [Haskell demo project]"] <=> hBorder 
+
+assessmentScreenApp :: App () e ()
+assessmentScreenApp =
+    App { appDraw = const [assessmentScreenUI]
         , appHandleEvent = resizeOrQuit
         , appStartEvent = return ()
         , appAttrMap = const $ myMap

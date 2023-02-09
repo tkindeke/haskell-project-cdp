@@ -1,10 +1,8 @@
 module Main where
 
-import Widgets (homeScreenApp  )
-import Brick (defaultMain)
+import Brick ( defaultMain )
+import Widgets (homeScreenApp )
 
 main :: IO ()
 main = defaultMain homeScreenApp ()
-
-
 
