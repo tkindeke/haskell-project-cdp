@@ -51,7 +51,7 @@ extra-source-files:
 
 library
     -- Modules exported by the library.
-    exposed-modules:  MyLib
+    exposed-modules:  Widgets
             -- Brick
             -- Brick.AttrMap
             -- Brick.BChan
