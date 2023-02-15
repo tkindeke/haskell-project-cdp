@@ -3,10 +3,18 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module DataTypes where
-    
+
 import Data.Text (Text)
 import Data.Aeson ( FromJSON )
 import GHC.Generics (Generic)
+import Brick (attrName, AttrName)
+import qualified Brick.AttrMap
+
+data Name = BtnStart | BtnCancel | BtnSubmit
+          deriving (Show, Ord, Eq)
+
+data AppState = Overview | Running | Result 
+    deriving ( Eq, Show )
 
 data Answer = Answer{
     answerTitle::Text,

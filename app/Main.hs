@@ -1,8 +1,8 @@
 module Main where
 
-import Brick ( defaultMain )
-import Widgets (homeScreenApp )
+import Brick
+import Utility
+import Widgets
 
 main :: IO ()
-main = defaultMain homeScreenApp ()
-
+main = renderUI
