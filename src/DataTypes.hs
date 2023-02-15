@@ -10,10 +10,10 @@ import GHC.Generics (Generic)
 import Brick (attrName, AttrName)
 import qualified Brick.AttrMap
 
-data Name = BtnStart | BtnCancel | BtnSubmit
+data Name = BtnStart | BtnCancel | BtnSubmit | BtnClose
           deriving (Show, Ord, Eq)
 
-data AppState = Overview | Running | Result 
+data AppState = Overview | Quiz | Result
     deriving ( Eq, Show )
 
 data Answer = Answer{

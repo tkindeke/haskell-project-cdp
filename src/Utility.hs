@@ -34,8 +34,8 @@ import System.IO (Handle, IOMode (ReadMode), hClose, hGetContents, hIsEOF, openF
 -- y :: Maybe Assessment
 
 --applies styles to the screen main container
-container :: Widget Name -> Widget Name
-container w =
+createContainer :: Widget Name -> Widget Name
+createContainer w =
   withBorderStyle unicode $
     border $
       padLeftRight 1 $
@@ -44,18 +44,18 @@ container w =
 
 type Label = String
 
-button :: Label -> Name -> Widget Name
-button l n =
+createButton :: Label -> Name -> Widget Name
+createButton l n =
   clickable
     n
-    ( padTop (Pad 1) $
+    (padTop (Pad 1) $
         joinBorders $
           withBorderStyle unicode $
             border $
               vLimit 5 $
                 setAvailableSize (50, 10) $
-                  padLeftRight 2 $ str l
-    )
+                  padLeftRight 2 $ str l)
+    
 
 getAssessment :: FilePath -> IO ()
 getAssessment fp = do
