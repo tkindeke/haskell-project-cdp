@@ -29,7 +29,9 @@ data Question = Question{
 }deriving (Show,Generic)
 
 data Assessment = Assessment{
-    assessmentTitle::Text,
+    assessmentTitle::String,
+    section::String,
+    instructions::String,
     questions::[Question],
     minPercentage::Int
 } deriving (Show,Generic)

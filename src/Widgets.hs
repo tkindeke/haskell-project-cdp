@@ -51,16 +51,28 @@ import Brick.Widgets.Border.Style (unicode)
 import Brick.Widgets.Center (center, centerLayer, hCenter, hCenterLayer, vCenterLayer)
 import Control.Monad (void)
 import Control.Monad.Trans (liftIO)
-import DataTypes ( Name(..), AppState(..) )
+import DataTypes
+import qualified DataTypes as DT
 import Graphics.Vty (Event (EvKey), Key (KChar), blue, defAttr, white)
 import qualified Graphics.Vty as V
 import Lens.Micro ((^.))
 import Lens.Micro.Mtl ( (.=) )
 import Lens.Micro.TH (makeLenses)
 import Utility ( createContainer, createButton )
+import qualified Data.Aeson as A
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.UTF8 as BLU
+import Data.Maybe (fromJust)
+import qualified System.IO as S
 
 
-data St = St {_currentState :: AppState, _result :: Int }
+
+data St = St {_currentState :: AppState, _result :: Int, _config :: Cfg} deriving (Show)
+
+data Cfg = Cfg {_title :: String, _notes :: String, _sectionTitle :: String, _questionNbr :: String} deriving (Show)
+
+-- assessmentData :: Maybe Assessment
+-- assessmentData = undefined
 
 blueBgAttr :: AttrName
 blueBgAttr = attrName "blueBg"
@@ -74,45 +86,42 @@ btnWhiteOnBlue = attrName "btnWhiteOnBlue"
 myMap :: AttrMap
 myMap = attrMap defAttr [(attrName "btnWhiteOnBlue", white `on` blue)]
 
-initialState :: St
-initialState = St {_currentState = Overview, _result = 65}
-
 makeLenses ''St
+makeLenses ''Cfg
 
-header :: Widget Name
-header = hBox [str "Haskell Assessment [Haskell demo project]"] <=> hBorder
+header :: St -> Widget Name
+header st = hBox [str $ st^.config.title] <=> hBorder
 
 --- Home Screen [START]---
-owerviewUI :: [Widget Name]
-owerviewUI = [createContainer (vBox [header, overviewBody])]
+owerviewUI :: St -> [Widget Name]
+owerviewUI st = [createContainer (vBox [header st, overviewBody st])]
 
-overviewBody :: Widget Name
-overviewBody =
+overviewBody :: St -> Widget Name
+overviewBody st =
   vBox
-    [ str "You must complete all sections within the said time.",
-      str "Kindly note that timer starts as soon as you click on the start button.",
-      padBottom (Pad 1) (str "To start the assessment, please click on 'Start'."),
-      overviewTab,
+    [ 
+      padBottom (Pad 1) (str $ st^.config.notes),
+      overviewTab st,
       startBtn
     ]
 
-overviewTab :: Widget Name
-overviewTab =
+overviewTab :: St -> Widget Name
+overviewTab st =
   joinBorders $
     withBorderStyle unicode $
       border $
         vLimit 5 $
           setAvailableSize (50, 10) $
-            ( vBox [str "Section Title", hBorder, str "Monads"] <+> vBorder
-                <+> vBox [str "No of Questions", hBorder, str "5"]
+            ( vBox [str "Section Title", hBorder, str $ st^.config.sectionTitle] <+> vBorder
+                <+> vBox [str "No of Questions", hBorder, str $  st^.config.questionNbr]
             )
 
 startBtn :: Widget Name
 startBtn = createButton " START " BtnStart
 
 --- Assessment Screen [START]---
-assessmentUI :: [Widget Name]
-assessmentUI = [createContainer (vBox [header, assessmentBody])]
+assessmentUI :: St -> [Widget Name]
+assessmentUI st = [createContainer (vBox [header st, assessmentBody])]
 
 assessmentBody :: Widget Name
 assessmentBody = hBox [questionWidget] <=> hBox [cancelBtn <+> submitBtn]
@@ -135,7 +144,7 @@ cancelBtn = createButton " CANCEL " BtnCancel
 
 --- Result Screen [START]---
 resultUI :: St -> [Widget Name]
-resultUI st = [createContainer (vBox [header, resultBody st])]
+resultUI st = [createContainer (vBox [header st, resultBody st])]
 
 resultBody :: St -> Widget Name
 resultBody st = hBox [resultWidget st] <=> hBox [closeBtn]
@@ -162,8 +171,8 @@ drawUI :: St -> [Widget Name]
 drawUI st = ui
   where
     ui = case st ^. currentState of
-      Overview -> owerviewUI
-      Quiz -> assessmentUI
+      Overview -> owerviewUI st
+      Quiz -> assessmentUI st
       Result -> resultUI st
 
 assessmentApp :: App St e Name
@@ -189,4 +198,24 @@ appEvent (T.VtyEvent (V.EvKey V.KEsc [])) = T.halt
 appEvent _ = return ()
 
 renderUI :: IO ()
-renderUI = void $ defaultMain assessmentApp initialState
+renderUI = do
+  handle <- S.openFile "/home/ninadu/Desktop/workspace/haskell/haskell-project-cdp/json/data.json" S.ReadMode
+  fileContent <- S.hGetContents handle
+  let byteContent = BLU.fromString fileContent
+  let assessmentData = A.decode byteContent :: Maybe Assessment
+  void (defaultMain assessmentApp . initState $ fromJust (assessmentData))
+  S.hClose handle
+
+initState :: Assessment -> St
+initState a@(Assessment {assessmentTitle = at, section = s, instructions = i, questions = q}) =
+  St
+    { _config =
+        Cfg
+          { _title = at,
+            _sectionTitle = s,
+            _notes = i,
+            _questionNbr = show (length q) 
+          },
+      _currentState = Overview,
+      _result = 0
+    }
