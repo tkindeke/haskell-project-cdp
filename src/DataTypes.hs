@@ -17,13 +17,13 @@ data AppState = Overview | Quiz | Result
     deriving ( Eq, Show )
 
 data Answer = Answer{
-    answerTitle::Text,
+    answerTitle::String,
     correct::Bool,
     selected::Bool
 }deriving (Show,Generic)
 
 data Question = Question{
-    questionTitle::Text,
+    questionTitle::String,
     answers::[Answer],
     score::Int
 }deriving (Show,Generic)

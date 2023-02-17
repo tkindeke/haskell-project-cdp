@@ -65,11 +65,9 @@ import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.Maybe (fromJust)
 import qualified System.IO as S
 
-
-
 data St = St {_currentState :: AppState, _result :: Int, _config :: Cfg} deriving (Show)
 
-data Cfg = Cfg {_title :: String, _notes :: String, _sectionTitle :: String, _questionNbr :: String} deriving (Show)
+data Cfg = Cfg {_title :: String, _notes :: String, _sectionTitle :: String, _questionsCount :: String, _quizQuestions :: [Question]} deriving (Show)
 
 -- assessmentData :: Maybe Assessment
 -- assessmentData = undefined
@@ -99,7 +97,7 @@ owerviewUI st = [createContainer (vBox [header st, overviewBody st])]
 overviewBody :: St -> Widget Name
 overviewBody st =
   vBox
-    [ 
+    [
       padBottom (Pad 1) (str $ st^.config.notes),
       overviewTab st,
       startBtn
@@ -113,7 +111,7 @@ overviewTab st =
         vLimit 5 $
           setAvailableSize (50, 10) $
             ( vBox [str "Section Title", hBorder, str $ st^.config.sectionTitle] <+> vBorder
-                <+> vBox [str "No of Questions", hBorder, str $  st^.config.questionNbr]
+                <+> vBox [str "No of Questions", hBorder, str $  st^.config.questionsCount]
             )
 
 startBtn :: Widget Name
@@ -121,20 +119,19 @@ startBtn = createButton " START " BtnStart
 
 --- Assessment Screen [START]---
 assessmentUI :: St -> [Widget Name]
-assessmentUI st = [createContainer (vBox [header st, assessmentBody])]
+assessmentUI st = [createContainer (vBox [header st, assessmentBody st])]
 
-assessmentBody :: Widget Name
-assessmentBody = hBox [questionWidget] <=> hBox [cancelBtn <+> submitBtn]
+assessmentBody :: St -> Widget Name
+assessmentBody st = hBox [questionWidget st] <=> hBox [cancelBtn <+> submitBtn]
 
-questionWidget :: Widget Name
-questionWidget =
-  vBox
-    [ str "1. What is the type of return?",
-      str "[] Monad m => m a -> (a -> m b) -> m b",
-      str "[] Monad m => a -> (a -> m b) -> m b",
-      str "[] Monad m => m a -> a",
-      str "[] Monad m => a -> m a"
-    ]
+questionWidget :: St -> Widget Name
+questionWidget st = vBox $ map transformQuestion (st^.config.quizQuestions)
+
+transformQuestion :: Question -> Widget Name
+transformQuestion q@(Question {questionTitle=qt, answers=a}) = padBottom (Pad 1) (str qt <=> vBox (map transformAnswer a))
+
+transformAnswer :: Answer -> Widget Name
+transformAnswer a@(Answer {answerTitle=at}) = str ("   " ++ at)
 
 submitBtn :: Widget Name
 submitBtn = createButton " SUBMIT " BtnSubmit
@@ -214,7 +211,8 @@ initState a@(Assessment {assessmentTitle = at, section = s, instructions = i, qu
           { _title = at,
             _sectionTitle = s,
             _notes = i,
-            _questionNbr = show (length q) 
+            _questionsCount = show (length q) ,
+            _quizQuestions = q
           },
       _currentState = Overview,
       _result = 0
