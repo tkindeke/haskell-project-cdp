@@ -9,8 +9,11 @@ import Data.Aeson ( FromJSON )
 import GHC.Generics (Generic)
 import Brick (attrName, AttrName)
 import qualified Brick.AttrMap
+import Brick.Widgets.List (List)
 
-data Name = BtnStart | BtnCancel | BtnSubmit | BtnClose
+type Label = String
+
+data Name = BtnStart | BtnCancel | BtnSubmit | BtnClose | LstQuestions
           deriving (Show, Ord, Eq)
 
 data AppState = Overview | Quiz | Result
@@ -39,3 +42,17 @@ data Assessment = Assessment{
 instance FromJSON Answer
 instance FromJSON Question
 instance FromJSON Assessment
+data St = St {_selectedItem :: String, _currentState :: AppState, _listQuestions :: List Name Question, _config :: Cfg, _result :: UserResult} deriving (Show)
+
+data Cfg = Cfg {_title :: String, _notes :: String, _sectionTitle :: String, _questionsCount :: String, _quizQuestions :: [Question]} deriving (Show)
+
+data UserResult = UserResult
+  { _answer1 :: String,
+    _answer2 :: String,
+    _answer3 :: String,
+    _answer4 :: String,
+    _answer5 :: String,
+    _resultScore :: Int,
+    _resultPercentage :: Int
+  }
+  deriving (Show)

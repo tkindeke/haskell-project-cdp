@@ -1,7 +1,7 @@
 {
 	"assessmentTitle":"Monads! Test your knowledge [Haskell demo project]",
 	"section":"Monads",
-	"instructions":"Click on the START button to begin your assessment. \nOnce you're done answering, click on submit to end the session.\nGood luck!",
+	"instructions":"This quiz is limited to 5 questions only. \nYou feel confident? Click on the START button to start the quiz. \nOnce you're done answering, submit your answers to get your result.\nGood luck!",
 	"minPercentage":60,
 	"questions":[
 	{

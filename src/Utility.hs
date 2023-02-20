@@ -17,34 +17,15 @@ import Brick.Widgets.Border (border)
 import Brick.Widgets.Border.Style (unicode)
 import Data.Aeson (decode)
 import qualified Data.ByteString.Lazy.UTF8 as BLU (ByteString, fromString)
-import DataTypes (Name)
-
--- import GHC.IO.Handle (hDuplicate)
--- import Graphics.Vty (MaybeDefault)
+import DataTypes (Label, Name)
 import System.IO (Handle, IOMode (ReadMode), hClose, hGetContents, hIsEOF, openFile)
-
--- returnIOHandle :: FilePath -> IO Handle
--- returnIOHandle a = openFile a ReadMode
-
--- returnIOString :: Handle -> IO String
--- returnIOString = System.IO.hGetContents
-
--- returnByteString :: String -> BLU.ByteString
--- returnByteString =  BLU.fromString
-
--- y :: Maybe Assessment
-
---applies styles to the screen main container
 createContainer :: Widget Name -> Widget Name
 createContainer w =
   withBorderStyle unicode $
     border $
       padLeftRight 1 $
         padBottom (Pad 1) $
-          setAvailableSize (80, 500) w
-
-type Label = String
-
+          setAvailableSize (80, 1000) w
 createButton :: Label -> Name -> Widget Name
 createButton l n =
   clickable

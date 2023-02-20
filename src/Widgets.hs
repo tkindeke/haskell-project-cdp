@@ -1,7 +1,7 @@
-{-# HLINT ignore "Redundant bracket" #-}
-{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# HLINT ignore "Redundant bracket" #-}
+{-# LANGUAGE BlockArguments #-}
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 {-# HLINT ignore "Redundant $" #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
@@ -45,7 +45,7 @@ import Brick
     (<=>),
   )
 import qualified Brick as T
-import Brick.Forms (checkboxField)
+import Brick.Forms (Form, checkboxField)
 import Brick.Widgets.Border (border, hBorder, vBorder)
 import Brick.Widgets.Border.Style (unicode)
 import Brick.Widgets.Center (center, centerLayer, hCenter, hCenterLayer, vCenterLayer)
@@ -64,113 +64,77 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.Maybe (fromJust)
 import qualified System.IO as S
+import Data.Text (Text)
+import qualified Brick.Widgets.List as L
+import qualified Data.Vector as Vec
+import Brick.Widgets.List (List, listSelectedElement)
 
-data St = St {_currentState :: AppState, _result :: Int, _config :: Cfg} deriving (Show)
-
-data Cfg = Cfg {_title :: String, _notes :: String, _sectionTitle :: String, _questionsCount :: String, _quizQuestions :: [Question]} deriving (Show)
-
--- assessmentData :: Maybe Assessment
--- assessmentData = undefined
-
-blueBgAttr :: AttrName
-blueBgAttr = attrName "blueBg"
-
-specificAttr :: AttrName
-specificAttr = blueBgAttr <> attrName "specific"
-
-btnWhiteOnBlue :: AttrName
-btnWhiteOnBlue = attrName "btnWhiteOnBlue"
-
-myMap :: AttrMap
-myMap = attrMap defAttr [(attrName "btnWhiteOnBlue", white `on` blue)]
 
 makeLenses ''St
 makeLenses ''Cfg
+makeLenses ''UserResult
 
 header :: St -> Widget Name
 header st = hBox [str $ st^.config.title] <=> hBorder
 
 --- Home Screen [START]---
 owerviewUI :: St -> [Widget Name]
-owerviewUI st = [createContainer (vBox [header st, overviewBody st])]
-
-overviewBody :: St -> Widget Name
-overviewBody st =
-  vBox
-    [
-      padBottom (Pad 1) (str $ st^.config.notes),
-      overviewTab st,
-      startBtn
-    ]
-
-overviewTab :: St -> Widget Name
-overviewTab st =
-  joinBorders $
-    withBorderStyle unicode $
-      border $
-        vLimit 5 $
-          setAvailableSize (50, 10) $
-            ( vBox [str "Section Title", hBorder, str $ st^.config.sectionTitle] <+> vBorder
-                <+> vBox [str "No of Questions", hBorder, str $  st^.config.questionsCount]
-            )
-
-startBtn :: Widget Name
-startBtn = createButton " START " BtnStart
+owerviewUI st = [createContainer
+                  (vBox [
+                    header st,
+                    vBox[
+                      padBottom (Pad 1) (str $ st^.config.notes),
+                        joinBorders $
+                          withBorderStyle unicode $
+                            border $
+                              vLimit 5 $
+                                setAvailableSize (50, 10) $
+                                  ( vBox [str "Section Title", hBorder, str $ st^.config.sectionTitle] <+> vBorder
+                                      <+> vBox [str "No of Questions", hBorder, str $  st^.config.questionsCount]
+                                  ),
+                      createButton " START " BtnStart
+                    ]
+                  ])
+                ]
 
 --- Assessment Screen [START]---
 assessmentUI :: St -> [Widget Name]
-assessmentUI st = [createContainer (vBox [header st, assessmentBody st])]
+assessmentUI st = [createContainer (vBox [header st] <=> (assessmentBody st))]
 
 assessmentBody :: St -> Widget Name
-assessmentBody st = hBox [questionWidget st] <=> hBox [cancelBtn <+> submitBtn]
+assessmentBody st =  vBox [ T.padTopBottom 1 $ vLimit 25 $ L.renderList (drawListQuestion st) False (st^.listQuestions) ] <=>
+                     hBox [createButton " CANCEL " BtnCancel <+> createButton " SUBMIT " BtnSubmit]
 
-questionWidget :: St -> Widget Name
-questionWidget st = vBox $ map transformQuestion (st^.config.quizQuestions)
+drawListQuestion :: St -> Bool -> Question -> Widget Name
+drawListQuestion st _ q@(Question {questionTitle=qt, answers=a}) = padBottom (Pad 1) (str qt <=> vBox (map (drawAnswer st) a))
 
-transformQuestion :: Question -> Widget Name
-transformQuestion q@(Question {questionTitle=qt, answers=a}) = padBottom (Pad 1) (str qt <=> vBox (map transformAnswer a))
-
-transformAnswer :: Answer -> Widget Name
-transformAnswer a@(Answer {answerTitle=at}) = str ("   " ++ at)
-
-submitBtn :: Widget Name
-submitBtn = createButton " SUBMIT " BtnSubmit
-
-cancelBtn :: Widget Name
-cancelBtn = createButton " CANCEL " BtnCancel
+drawAnswer :: St -> Answer -> Widget Name
+drawAnswer st a@(Answer {answerTitle=at}) = str ("   [] " ++ at)
 
 --- Result Screen [START]---
 resultUI :: St -> [Widget Name]
 resultUI st = [createContainer (vBox [header st, resultBody st])]
 
 resultBody :: St -> Widget Name
-resultBody st = hBox [resultWidget st] <=> hBox [closeBtn]
+resultBody st = hBox [resultWidget st] <=> hBox [createButton " CLOSE " BtnClose]
 
 resultWidget :: St -> Widget Name
-resultWidget st = content
+resultWidget st = vBox [quizFeedBack,
+                        str ("Total marks earned " ++ show(st^.result.resultScore)),
+                        str ("Marks earned " ++ show(st^.result.resultScore) ++ "/" ++ st^.config.questionsCount),
+                        str ("Percentage obtained " ++ show(st^.result.resultPercentage) ++ "%")]
   where
-    content = if st^.result >= 60 then
-      vBox [str "Congratulations! you have successfuly completed the quiz",
-            str "Total marks earned 40",
-            str "Marks earned 40/50",
-            str "Percentage obtained 80%"]
-      else
-        vBox [str "sorry, you failed the quiz",
-            str "Total marks earned 40",
-            str "Marks earned 40/50",
-            str "Percentage obtained 30%"]
-
-closeBtn :: Widget Name
-closeBtn = createButton " CLOSE " BtnClose
+    quizFeedBack = if st^.result.resultPercentage >= 60 then
+                      str "Congratulations! you have successfuly completed the quiz"
+                   else
+                      str "sorry, you failed the quiz"
 
 --- Screen rendering ---
 drawUI :: St -> [Widget Name]
-drawUI st = ui
-  where
-    ui = case st ^. currentState of
-      Overview -> owerviewUI st
-      Quiz -> assessmentUI st
-      Result -> resultUI st
+drawUI st = case st ^. currentState of
+          Overview -> owerviewUI st
+          Quiz -> assessmentUI st
+          Result -> resultUI st
 
 assessmentApp :: App St e Name
 assessmentApp =
@@ -180,23 +144,24 @@ assessmentApp =
       appStartEvent = do
               vty <- T.getVtyHandle
               liftIO $ V.setMode (V.outputIface vty) V.Mouse True,
-      appAttrMap = const $ myMap,
+      appAttrMap = const $ attrMap V.defAttr [],
       appChooseCursor = neverShowCursor
     }
 
 appEvent :: BrickEvent Name e -> EventM Name St ()
-appEvent ev@(T.MouseDown n _ _ loc) = do
+appEvent ev@(T.MouseDown n e x loc) = do
   currentState .= case n of
     BtnStart -> Quiz
     BtnCancel -> Overview
     BtnSubmit -> Result
     BtnClose -> Overview
+    LstQuestions -> Quiz
 appEvent (T.VtyEvent (V.EvKey V.KEsc [])) = T.halt
 appEvent _ = return ()
 
 renderUI :: IO ()
 renderUI = do
-  handle <- S.openFile "/home/ninadu/Desktop/workspace/haskell/haskell-project-cdp/json/data.json" S.ReadMode
+  handle <- S.openFile "data.json" S.ReadMode
   fileContent <- S.hGetContents handle
   let byteContent = BLU.fromString fileContent
   let assessmentData = A.decode byteContent :: Maybe Assessment
@@ -215,5 +180,15 @@ initState a@(Assessment {assessmentTitle = at, section = s, instructions = i, qu
             _quizQuestions = q
           },
       _currentState = Overview,
-      _result = 0
+      _result = UserResult{
+        _answer1 = "",
+        _answer2 = "",
+        _answer3 = "",
+        _answer4 = "",
+        _answer5 = "",
+        _resultScore = 0,
+        _resultPercentage = 0
+      },
+      _listQuestions = L.list LstQuestions (Vec.fromList(q)) 0,
+      _selectedItem = ""
     }

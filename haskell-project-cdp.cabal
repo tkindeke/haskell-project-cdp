@@ -75,6 +75,7 @@ library
                     ,aeson
                     ,bytestring
                     ,utf8-string
+                    ,vector
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -112,6 +113,6 @@ executable haskell-project-cdp
     -- Base language which the package is written in.
     default-language: Haskell2010
 
-    extensions: 
+    default-extensions: 
          OverloadedStrings
         ,DeriveGeneric
