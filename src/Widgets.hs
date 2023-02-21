@@ -56,7 +56,7 @@ import qualified DataTypes as DT
 import Graphics.Vty (Event (EvKey), Key (KChar), blue, defAttr, white)
 import qualified Graphics.Vty as V
 import Lens.Micro ((^.))
-import Lens.Micro.Mtl ( (.=) )
+import Lens.Micro.Mtl (use, (.=))
 import Lens.Micro.TH (makeLenses)
 import Utility ( createContainer, createButton )
 import qualified Data.Aeson as A
@@ -67,7 +67,7 @@ import qualified System.IO as S
 import Data.Text (Text)
 import qualified Brick.Widgets.List as L
 import qualified Data.Vector as Vec
-import Brick.Widgets.List (List, listSelectedElement)
+import Brick.Widgets.List (List, listElementsL, listSelectedElement)
 
 
 makeLenses ''St
@@ -131,7 +131,7 @@ resultWidget st = vBox [quizFeedBack,
 
 --- Screen rendering ---
 drawUI :: St -> [Widget Name]
-drawUI st = case st ^. currentState of
+drawUI st = case st ^. currentView of
           Overview -> owerviewUI st
           Quiz -> assessmentUI st
           Result -> resultUI st
@@ -150,12 +150,13 @@ assessmentApp =
 
 appEvent :: BrickEvent Name e -> EventM Name St ()
 appEvent ev@(T.MouseDown n e x loc) = do
-  currentState .= case n of
+  currentView .= case n of
     BtnStart -> Quiz
     BtnCancel -> Overview
     BtnSubmit -> Result
     BtnClose -> Overview
     LstQuestions -> Quiz
+
 appEvent (T.VtyEvent (V.EvKey V.KEsc [])) = T.halt
 appEvent _ = return ()
 
@@ -179,7 +180,7 @@ initState a@(Assessment {assessmentTitle = at, section = s, instructions = i, qu
             _questionsCount = show (length q) ,
             _quizQuestions = q
           },
-      _currentState = Overview,
+      _currentView = Overview,
       _result = UserResult{
         _answer1 = "",
         _answer2 = "",

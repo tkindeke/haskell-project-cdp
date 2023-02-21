@@ -42,7 +42,7 @@ data Assessment = Assessment{
 instance FromJSON Answer
 instance FromJSON Question
 instance FromJSON Assessment
-data St = St {_selectedItem :: String, _currentState :: AppState, _listQuestions :: List Name Question, _config :: Cfg, _result :: UserResult} deriving (Show)
+data St = St {_selectedItem :: String, _currentView :: AppState, _listQuestions :: List Name Question, _config :: Cfg, _result :: UserResult} deriving (Show)
 
 data Cfg = Cfg {_title :: String, _notes :: String, _sectionTitle :: String, _questionsCount :: String, _quizQuestions :: [Question]} deriving (Show)
 
