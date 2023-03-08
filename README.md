@@ -28,7 +28,7 @@ Result<br/>
 
 CREDITS<br/>
 
-none of this would have been possible without the help of this user guide on brick library and ofcourse the training given by Emurgo Academy
+none of this would have been possible without the help of this user guide on brick library and ofcourse the training given by Emurgo Academy<br/>
 https://github.com/jtdaugherty/brick/blob/master/docs/guide.rst
 
 
